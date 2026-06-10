@@ -21,55 +21,49 @@ st.set_page_config(page_title="Cinema Mind", page_icon="🍿", layout="wide")
 @st.cache_resource
 def load_ai_model():
     return SentenceTransformer('all-MiniLM-L6-v2')
-
 @st.cache_resource
 def load_db_client():
-    # Ensure the storage directory exists on the cloud server
-    os.makedirs(QDRANT_DB_PATH, exist_ok=True)
-    client = QdrantClient(path=QDRANT_DB_PATH)
+    # 1. Use an in-memory database to bypass cross-OS lockfile crashes
+    client = QdrantClient(":memory:")
     
-    # --- INTERVIEW FLEX: THE COLD START HANDLER ---
-    try:
-        # Check if the database collection actually loaded
-        client.get_collection("movies")
-    except Exception:
-        # If it failed, the cloud server doesn't have the DB. Let's build it automatically!
-        if not os.path.exists(TEXT_EMBEDDINGS_FILE):
-            st.error("⚠️ Data files missing! Git did not upload your `data/` folder. Please ensure the parquet files are pushed to GitHub.")
-            st.stop()
-            
-        print("Cold start triggered: Building Vector DB from Parquet files...")
-        client.recreate_collection(
-            collection_name="movies",
-            vectors_config={
-                "text": models.VectorParams(size=384, distance=models.Distance.COSINE),
-                "visual": models.VectorParams(size=2048, distance=models.Distance.COSINE),
-            }
-        )
+    # 2. Check if our Parquet files uploaded successfully
+    if not os.path.exists(TEXT_EMBEDDINGS_FILE):
+        st.error("⚠️ Data files missing! Git did not upload your Parquet files.")
+        st.stop()
         
-        # Load the raw math arrays we saved earlier
-        text_df = pd.read_parquet(TEXT_EMBEDDINGS_FILE)
-        visual_df = pd.read_parquet(VISUAL_EMBEDDINGS_FILE)
-        df = pd.merge(text_df, visual_df, on="id", how="inner")
-        
-        # Package and upload to the local Qdrant instance
-        points = []
-        for index, row in df.iterrows():
-            payload = {
-                "title": row["title"],
-                "overview": row["overview"],
-                "poster_path": row["poster_path"],
-                "release_date": row["release_date"]
-            }
-            points.append(models.PointStruct(
-                id=int(row["id"]),
-                vectors={"text": row["embedding"], "visual": row["visual_embedding"]},
-                payload=payload
-            ))
-        client.upsert(collection_name="movies", points=points)
-        print("Vector DB built successfully!")
-        
+    print("Cloud init: Building Vector DB in RAM from Parquet files...")
+    client.recreate_collection(
+        collection_name="movies",
+        vectors_config={
+            "text": models.VectorParams(size=384, distance=models.Distance.COSINE),
+            "visual": models.VectorParams(size=2048, distance=models.Distance.COSINE),
+        }
+    )
+    
+    # 3. Load the raw math arrays we saved earlier
+    text_df = pd.read_parquet(TEXT_EMBEDDINGS_FILE)
+    visual_df = pd.read_parquet(VISUAL_EMBEDDINGS_FILE)
+    df = pd.merge(text_df, visual_df, on="id", how="inner")
+    
+    # 4. Package and upload to the local RAM instance
+    points = []
+    for index, row in df.iterrows():
+        payload = {
+            "title": row["title"],
+            "overview": row["overview"],
+            "poster_path": row["poster_path"],
+            "release_date": row["release_date"]
+        }
+        points.append(models.PointStruct(
+            id=int(row["id"]),
+            vectors={"text": row["embedding"], "visual": row["visual_embedding"]},
+            payload=payload
+        ))
+    client.upsert(collection_name="movies", points=points)
+    print("✅ Vector DB built successfully in memory!")
+    
     return client
+
 
 model = load_ai_model()
 client = load_db_client()

@@ -62,7 +62,7 @@ def load_db_client():
         clean_visual_vector = [float(x) for x in raw_visual_vector]
         points.append(models.PointStruct(
             id=int(row["id"]),
-            vectors={
+            vector={
                 "text": clean_text_vector, 
                 "visual": clean_visual_vector
             },

@@ -78,6 +78,35 @@ model = load_ai_model()
 client = load_db_client()
 
 # 4. The UI Layout
+# --- NEW: Product Roadmap & Feedback Sidebar ---
+with st.sidebar:
+    st.header("🚀 Future Roadmap")
+    st.markdown("""
+    Currently, Cinema Mind searches using plot semantics and visual poster embeddings. 
+    
+    **Upcoming Features:**
+    * **Metadata Weights:** Expanding the vector space to include Directors, Actors, and Studio styles.
+    * **Personalized Tuning:** User profiles to save favorites and fine-tune recommendations.
+    * **Enterprise Cloud:** Migrating from an in-memory instance to a dedicated Qdrant Cloud cluster.
+    """)
+    
+    st.divider()
+    
+    st.header("💬 Feedback & Contributions")
+    st.markdown("Have an idea to improve the algorithm? Let me know!")
+    
+    # A native Streamlit form for user feedback
+    with st.form("feedback_form"):
+        feedback = st.text_area("Your thoughts...", placeholder="e.g., Have you considered adding genre filters?")
+        submitted = st.form_submit_button("Submit Feedback")
+        
+        if submitted:
+            # In a production app, this would write to a database. 
+            # For now, it shows recruiters you know how to build data-capture UI.
+            st.success("Thanks for the feedback! I'm constantly iterating on this pipeline.")
+            
+    st.markdown("[Drop a ⭐ or open an Issue on GitHub](https://github.com/Ankit777767/cinema-mind-recommender)")
+# ----------------------------------------------
 st.title("🧠 Cinema Mind Recommender")
 st.markdown("### Stop searching by genre. Search by *feeling*.")
 

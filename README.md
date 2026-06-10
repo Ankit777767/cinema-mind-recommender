@@ -24,3 +24,12 @@ Explore the live, cloud-deployed AI model here: **[https://cinema-mind-recommend
 7. Generate Visual Math: `python src/vision_module/image_embedder.py`
 8. Build the Qdrant DB: `python src/vector_db/build_index.py`
 9. Launch the App: `streamlit run src/frontend/app.py`
+
+## 🗺️ Product Roadmap
+This project is continuously evolving. Current focus areas for future iterations include:
+- [ ] **Metadata Integration:** Enhancing the embedding pipeline to ingest Director, Actor, and Studio metadata alongside textual and visual features.
+- [ ] **User Feedback Loop:** Implementing a PostgreSQL database to capture user feedback and track recommendation accuracy.
+- [ ] **Production Cloud Migration:** Moving the Qdrant architecture from an ephemeral in-memory deployment to a dedicated, persistent Qdrant Cloud cluster for massive horizontal scaling.
+
+## 🤝 Contributing & Feedback
+If you have suggestions for improving the vector search algorithm or adding new data sources, please feel free to open an issue or submit a pull request!

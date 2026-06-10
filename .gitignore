@@ -1,0 +1,10 @@
+# Qdrant database
+data/qdrant_storage/
+
+# Python
+__pycache__/
+*.pyc
+
+# Environment
+.env
+venv/

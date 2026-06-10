@@ -54,9 +54,18 @@ def load_db_client():
             "poster_path": row["poster_path"],
             "release_date": row["release_date"]
         }
+        raw_text_vector = row["embedding"].tolist() if hasattr(row["embedding"], "tolist") else list(row["embedding"])
+        raw_visual_vector = row["visual_embedding"].tolist() if hasattr(row["visual_embedding"], "tolist") else list(row["visual_embedding"])
+        
+        # 2. Coerce numbers explicitly to native Python floats to satisfy Pydantic
+        clean_text_vector = [float(x) for x in raw_text_vector]
+        clean_visual_vector = [float(x) for x in raw_visual_vector]
         points.append(models.PointStruct(
             id=int(row["id"]),
-            vectors={"text": row["embedding"], "visual": row["visual_embedding"]},
+            vectors={
+                "text": clean_text_vector, 
+                "visual": clean_visual_vector
+            },
             payload=payload
         ))
     client.upsert(collection_name="movies", points=points)

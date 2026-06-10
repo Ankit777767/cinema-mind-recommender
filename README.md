@@ -4,6 +4,9 @@ Traditional movie recommendation systems rely on collaborative filtering (matchi
 
 Instead of searching by genre, users search by *feeling* (e.g., "A visually stunning sci-fi that feels melancholic but ends with hope").
 
+## 🔗 Live Application Demo
+Explore the live, cloud-deployed AI model here: **[https://cinema-mind-recommender-by-ankit.streamlit.app/]**
+
 ## 🚀 Architecture & Tech Stack
 * **Natural Language Processing:** `HuggingFace (all-MiniLM-L6-v2)` translates movie plot summaries and user prompts into 384-dimensional dense vectors.
 * **Computer Vision:** A customized `ResNet-50` (with the classification head removed) extracts 2048-dimensional visual feature vectors from movie posters to understand color palettes and visual mood.

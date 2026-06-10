@@ -36,6 +36,6 @@ def search_movies(user_query, top_k = 3):
     print(f"📝 {overview[:150]}...\n")
 if __name__ == "__main__":
   # Change this string to whatever emotion or vibe you want to test!
-  my_prompt = "One Wish Willow"
+  my_prompt = "A psychological thriller with a great twist ending starring Leonardo DeCaprio"
   search_movies(my_prompt)
     

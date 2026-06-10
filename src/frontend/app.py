@@ -96,6 +96,7 @@ if user_query:
             using="text",
             limit=3
         )
+
         
         st.write("---")
         st.subheader("🍿 Your Matches")
@@ -106,11 +107,20 @@ if user_query:
                 score = round(hit.score * 100, 1)
                 title = hit.payload['title']
                 overview = hit.payload['overview']
-                poster_filename = f"{hit.id}.jpg"
-                poster_path = os.path.join(POSTERS_DIR, poster_filename)
+
+                # poster_filename = f"{hit.id}.jpg"
+                # poster_path = os.path.join(POSTERS_DIR, poster_filename)
                 
-                if os.path.exists(poster_path):
-                    st.image(poster_path, use_container_width=True)
+                # if os.path.exists(poster_path):
+                #     st.image(poster_path, use_container_width=True)
+                # else:
+                #     st.markdown("*(No Poster Available)*")
+                poster_path = hit.payload.get('poster_path')
+                
+                if poster_path:
+                    # Construct the live URL
+                    image_url = f"https://image.tmdb.org/t/p/w500{poster_path}"
+                    st.image(image_url, use_container_width=True)
                 else:
                     st.markdown("*(No Poster Available)*")
                 

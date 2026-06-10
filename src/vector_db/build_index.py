@@ -9,7 +9,7 @@ TEXT_EMBEDDINGS_FILE = os.path.join(BASE_DIR, "data", "movie_embeddings.parquet"
 VISUAL_EMBEDDINGS_FILE = os.path.join(BASE_DIR, "data", "visual_embeddings.parquet")
 QDRANT_DB_PATH = os.path.join(BASE_DIR, "data", "qdrant_storage") # Saves DB 
 
-def build_vector_db():
+def build_vector_db(batch_size=500):
   print("Loading Parquet files...")
   # print(TEXT_EMBEDDINGS_FILE)
   # print(os.path.exists(TEXT_EMBEDDINGS_FILE))
@@ -21,7 +21,9 @@ def build_vector_db():
   # merge data based on index column for both image and visual
   # simply drops the movie, if it doesnt contain the image
   df = pd.merge(text_df,visual_df,on='id',how='inner')#inner will drop if missing
-  print(f"Merged successfully. Preparing {len(df)} movies for the Vector DB.")
+  
+  total_movies = len(df)
+  print(f"Merged successfully. Preparing {total_movies} movies for the Vector DB.")
 
   # 3. Initialize Qdrant
   # By providing a path, Qdrant runs entirely on your local hard drive.
@@ -40,39 +42,51 @@ def build_vector_db():
     }
   )
 
-  points=[]
-  for index,row in df.iterrows():
-    #payload is the metadata user gets after search
-    payload ={
-      "title":row["title"],
-      "overview": row["overview"],
-      "poster_path": row["poster_path"],
-      "release_date": row["release_date"]
-    }
 
-    # Create a Qdrant Point
-    point = models.PointStruct(
-        id=int(row["id"]),
-        vector={
-            "text": row["embedding"],
-            "visual": row["visual_embedding"],
-        },
-        payload=payload
-    )
-    points.append(point)
+  # 3. Batch Processing Loop
+  print(f"Beginning batched upsert routines (Chunk Size: {batch_size})...")
+  
+  # Loop through the data frame in steps of batch_size
+  for start_idx in range(0, total_movies, batch_size):
+      end_idx = min(start_idx + batch_size, total_movies)
+      batch_df = df.iloc[start_idx:end_idx]
+      
+      points = []
+      for index, row in batch_df.iterrows():
+          payload = {
+              "title": row["title"],
+              "overview": row["overview"],
+              "poster_path": row["poster_path"],
+              "release_date": row["release_date"]
+          }
+          
+          # Ensure type safety for Pydantic schema validation
+          raw_text_vector = row["embedding"].tolist() if hasattr(row["embedding"], "tolist") else list(row["embedding"])
+          raw_visual_vector = row["visual_embedding"].tolist() if hasattr(row["visual_embedding"], "tolist") else list(row["visual_embedding"])
+          
+          clean_text_vector = [float(x) for x in raw_text_vector]
+          clean_visual_vector = [float(x) for x in raw_visual_vector]
 
-  # 5. Upload to the Database
-  print("Uploading to Qdrant...")
-  client.upsert(
-      collection_name=collection_name,
-      points=points
-  )
-# Let's verify it worked
+          points.append(models.PointStruct(
+              id=int(row["id"]),
+              vector={
+                  "text": clean_text_vector,
+                  "visual": clean_visual_vector
+              },
+              payload=payload
+          ))
+
+      # Upload this chunk safely to the disk engine
+      client.upsert(
+          collection_name=collection_name,
+          points=points
+      )
+      print(f"  Successfully processed points {start_idx} through {end_idx}...")
+
+  # Verification check
   collection_info = client.get_collection(collection_name)
-  print(f"✅ Success! Vector DB built. Total records in DB: {collection_info.points_count}")
+  print(f"\n✅ Build complete! Total records indexed in local database: {collection_info.points_count}")
+
 
 if __name__ == "__main__":
-    build_vector_db()
-
-
-
+  build_vector_db(batch_size=500)

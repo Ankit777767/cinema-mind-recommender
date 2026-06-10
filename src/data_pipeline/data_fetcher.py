@@ -54,4 +54,4 @@ def fetch_movies(pages_to_fetch=2):
     print("Pipeline finished successfully! Check your data folder.")
 
 if __name__ == "__main__":
-    fetch_movies(pages_to_fetch=2)
+    fetch_movies(pages_to_fetch=500)
